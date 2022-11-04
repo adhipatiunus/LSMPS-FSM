@@ -25,7 +25,7 @@ def calculate_weight(r_ij, R_e):
         w_ij = 0
     return w_ij
 
-def LSMPSb(node_x, node_y, index, diameter, r_e, neighbor, n_neighbor):
+def LSMPSb(node_x, node_y, index, diameter, R_e, R_s, neighbor, n_neighbor):
     N = len(node_x)
     n = len(index)
     EtaDx   = sparse.lil_matrix((n,N), dtype=np.float64)
@@ -52,28 +52,31 @@ def LSMPSb(node_x, node_y, index, diameter, r_e, neighbor, n_neighbor):
         idx_i = i
         x_i = node_x[idx_i]
         y_i = node_y[idx_i]
-        R_i = r_e * Li
+        r_i = diameter[idx_i]
+        #R_e = r_e * max(diameter[neighbor_idx])
+        #R_s = r_s * r_i
                 
         H_rs[0, 0] = 1
-        H_rs[1, 1] = Li**-1
-        H_rs[2, 2] = Li**-1
-        H_rs[3, 3] = 2 * Li**-2
-        H_rs[4, 4] = Li**-2
-        H_rs[5, 5] = 2 * Li**-2
+        H_rs[1, 1] = R_s[i]**-1
+        H_rs[2, 2] = R_s[i]**-1
+        H_rs[3, 3] = 2 * R_s[i]**-2
+        H_rs[4, 4] = R_s[i]**-2
+        H_rs[5, 5] = 2 * R_s[i]**-2
                 
         for j in range(n_neighbor[i]):
             idx_j = neighbor_idx[j]
             x_j = node_x[idx_j]
             y_j = node_y[idx_j]
-            R_j = r_e * diameter[idx_j]
-            R_ij = (R_i + R_j) / 2
+            r_j = diameter[idx_j]
+            #R_j = r_e * diameter[idx_j]
+            #R_ij = (R_i + R_j) / 2
             
             x_ij = x_j - x_i
             y_ij = y_j - y_i
             r_ij = np.sqrt((x_ij)**2 + (y_ij)**2)
              
-            p_x = x_ij / Li
-            p_y = y_ij / Li
+            p_x = x_ij / R_s[i]
+            p_y = y_ij / R_s[i]
             
             P[0, 0] = 1.0
             P[1, 0] = p_x
@@ -82,7 +85,8 @@ def LSMPSb(node_x, node_y, index, diameter, r_e, neighbor, n_neighbor):
             P[4, 0] = p_x * p_y
             P[5, 0] = p_y**2
             
-            w_ij = calculate_weight(r_ij, R_ij)
+            w_ij = calculate_weight(r_ij, R_e[i])
+            w_ij = (r_j**2 / r_i**2) * w_ij
             M += w_ij * np.dot(P, P.T)
             b_temp[j] = w_ij * P
         M_inv = np.linalg.inv(M)
@@ -102,7 +106,7 @@ def LSMPSb(node_x, node_y, index, diameter, r_e, neighbor, n_neighbor):
         k += 1
     return EtaDx, EtaDy, EtaDxx, EtaDxy, EtaDyy
 
-def LSMPSbUpwind(node_x, node_y, index, diameter, r_e, neighbor, n_neighbor, fx, fy):
+def LSMPSbUpwind(node_x, node_y, index, diameter, r_e, r_s, neighbor, n_neighbor, fx, fy):
     N = len(node_x)
     n = len(index)
     EtaDx   = sparse.lil_matrix((n,N), dtype=np.float64)
@@ -131,27 +135,31 @@ def LSMPSbUpwind(node_x, node_y, index, diameter, r_e, neighbor, n_neighbor, fx,
         idx_i = i
         x_i = node_x[idx_i]
         y_i = node_y[idx_i]
-        R_i = r_e * Li
+        r_i = diameter[idx_i]
+        #R_e = r_e * max(diameter[neighbor_idx])
+        #R_s = r_s * r_i
+        #R_i = r_e * Li
                 
         H_rs[0, 0] = 1
-        H_rs[1, 1] = Li**-1
-        H_rs[2, 2] = Li**-1
-        H_rs[3, 3] = 2 * Li**-2
-        H_rs[4, 4] = Li**-2
-        H_rs[5, 5] = 2 * Li**-2
+        H_rs[1, 1] = R_s[i]**-1
+        H_rs[2, 2] = R_s[i]**-1
+        H_rs[3, 3] = 2 * R_s[i]**-2
+        H_rs[4, 4] = R_s[i]**-2
+        H_rs[5, 5] = 2 * R_s[i]**-2
                 
         for j in range(n_neighbor[i]):
             idx_j = neighbor_idx[j]
             x_j = node_x[idx_j]
             y_j = node_y[idx_j]
-            R_j = r_e * diameter[idx_j]
-            R_ij = (R_i + R_j) / 2
+            r_j = diameter[idx_j]
+            #R_j = r_e * diameter[idx_j]
+            #R_ij = (R_i + R_j) / 2
             
             x_ij = x_j - x_i
             y_ij = y_j - y_i
              
-            p_x = x_ij / Li
-            p_y = y_ij / Li
+            p_x = x_ij / R_s[i]
+            p_y = y_ij / R_s[i]
             
             P[0, 0] = 1.0
             P[1, 0] = p_x
@@ -168,7 +176,7 @@ def LSMPSbUpwind(node_x, node_y, index, diameter, r_e, neighbor, n_neighbor, fx,
             r_ij = np.sqrt((x_ij + safety)**2 + (y_ij + safety)**2)
             n_ij = np.array([x_ij + safety, y_ij + safety]) / (r_ij)
             n_upwind = -np.array([(fx_i + safety), (fy_i + safety)]) / (np.sqrt((fx_i + safety)**2 + (fy_i + safety)**2))
-            w_spike = calculate_weight(r_ij, R_ij)
+            w_spike = calculate_weight(r_ij, R_e[i])
             if n_ij @ n_upwind > 1:
                 theta_ij = 1
             elif n_ij @ n_upwind < -1:
@@ -176,6 +184,7 @@ def LSMPSbUpwind(node_x, node_y, index, diameter, r_e, neighbor, n_neighbor, fx,
             else:    
                 theta_ij = np.arccos(n_ij @ n_upwind)
             w_ij = w_spike * max(np.cos(2 * theta_ij), eps)
+            w_ij = (r_j**2 / r_i**2) * w_ij
             if np.isnan(w_ij):
                 print(theta_ij)
             M += w_ij * np.dot(P, P.T)
@@ -212,7 +221,7 @@ ymax = ycenter + 7.5
 width = 1
 height = 1
 sigma = 1
-r_e = 2.5
+r_e = 2.1
 r_s = 1.0
 brinkman = True
 # %%
@@ -222,15 +231,19 @@ cell_size = r_e * np.max(diameter)
 # %%
 # Neighbor search
 n_bound = n_boundary[3]
-h = diameter 
-rc = np.concatenate((h[:n_bound] * r_e * 2, h[n_bound:] * r_e))
+h = max(diameter)
+#rc = np.concatenate((h[:n_bound] * r_e, h[n_bound:] * r_e))
+rc = r_e * h * np.ones_like(diameter)
 nodes_3d = np.concatenate((node_x.reshape(-1,1), node_y.reshape(-1,1), node_z.reshape(-1,1)), axis = 1)
 neighbor, n_neighbor = multiple_verlet(nodes_3d, n_bound, rc)
+#%%
+R_e = r_e * np.array([max(diameter[neighbor[i]]) for i in range(n_particle)])
+R_s = r_s * np.array([max(diameter[neighbor[i]]) for i in range(n_particle)])
 #%%
 n_thread = threading.active_count()
 index = np.array(index)
 i_list = np.array_split(index, n_thread)
-res = Parallel(n_jobs=-1)(delayed(LSMPSb)(node_x, node_y, idx, diameter, r_e, neighbor, n_neighbor) for idx in i_list)
+res = Parallel(n_jobs=-1)(delayed(LSMPSb)(node_x, node_y, idx, diameter, R_e, R_s, neighbor, n_neighbor) for idx in i_list)
 
 EtaDx = [0] * n_thread
 EtaDy = [0] * n_thread
@@ -336,7 +349,7 @@ alphaC = 0.5
 #dt = 0.05
 Re = 100
 nu = u0 * width / Re
-eta = 5e-3
+eta = 2e-1
 T = 0
 omega = 0
 
@@ -371,16 +384,18 @@ ts = []
 L2u = []
 L2v = []
 #%%
-dt = 5e-3
+dt = 2e-1
 u_old = u
 v_old = v
 
-while T < 5:
+sft = 1e-2
+
+while T <= 5 + sft:
     #dt = np.min(alphaC * diameter / np.sqrt(u**2+v**2))
     n_thread = threading.active_count()
     index = np.array(index)
     i_list = np.array_split(index, n_thread)
-    res = Parallel(n_jobs=-1)(delayed(LSMPSbUpwind)(node_x, node_y, idx, diameter, r_e, neighbor, n_neighbor, u, v) for idx in i_list)
+    res = Parallel(n_jobs=-1)(delayed(LSMPSbUpwind)(node_x, node_y, idx, diameter, R_e, R_s, neighbor, n_neighbor, u, v) for idx in i_list)
 
     EtaDxUpwind = [0] * n_thread
     EtaDyUpwind = [0] * n_thread

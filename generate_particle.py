@@ -745,7 +745,7 @@ def generate_particles3(xmin, xmax, x_center, ymin, ymax, y_center, sigma, R):
     diameter = h * np.ones(n_bound)
     
     # First layer
-    h = 0.025
+    h = 0.01
     x_bound_min = x_center - 1
     x_bound_max = x_center + 1
     y_bound_min = y_center - 1
