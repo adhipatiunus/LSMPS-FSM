@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import threading
 from joblib import Parallel, delayed
 
-from generate_particle import generate_particles, generate_particles2, generate_particles_rectangle, generate_particles_singleres
+from generate_particle import generate_particles, generate_particles2, generate_particles3, generate_particles_rectangle, generate_particles_singleres
 from neighbor_search import neighbor_search_cell_list
 from neighbor_search_verlet import multiple_verlet
 from visualize import visualize
@@ -216,7 +216,7 @@ r_e = 2.5
 r_s = 1.0
 brinkman = True
 # %%
-node_x, node_y, node_z, normal_x_bound, normal_y_bound, tangent_x_bound, tangent_y_bound, n_boundary, index, diameter = generate_particles2(xmin, xmax, xcenter, ymin, ymax, ycenter, sigma, RAD)
+node_x, node_y, node_z, normal_x_bound, normal_y_bound, tangent_x_bound, tangent_y_bound, n_boundary, index, diameter = generate_particles3(xmin, xmax, xcenter, ymin, ymax, ycenter, sigma, RAD)
 n_particle = node_x.shape[0]
 cell_size = r_e * np.max(diameter)
 # %%
@@ -336,7 +336,7 @@ alphaC = 0.5
 #dt = 0.05
 Re = 100
 nu = u0 * width / Re
-eta = 1e-2
+eta = 5e-3
 T = 0
 omega = 0
 
@@ -371,7 +371,7 @@ ts = []
 L2u = []
 L2v = []
 #%%
-dt = 1e-2
+dt = 5e-3
 u_old = u
 v_old = v
 
