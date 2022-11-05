@@ -221,7 +221,7 @@ ymax = ycenter + 7.5
 width = 1
 height = 1
 sigma = 1
-r_e = 2.1
+r_e = 2.5
 r_s = 1.0
 brinkman = True
 # %%
@@ -231,9 +231,11 @@ cell_size = r_e * np.max(diameter)
 # %%
 # Neighbor search
 n_bound = n_boundary[3]
-h = max(diameter)
-#rc = np.concatenate((h[:n_bound] * r_e, h[n_bound:] * r_e))
-rc = r_e * h * np.ones_like(diameter)
+h = diameter
+temp = np.where(h < max(h))
+h[temp] *= 2
+rc = np.concatenate((h[:n_bound] * r_e, h[n_bound:] * r_e))
+#rc = r_e * h * np.ones_like(diameter)
 nodes_3d = np.concatenate((node_x.reshape(-1,1), node_y.reshape(-1,1), node_z.reshape(-1,1)), axis = 1)
 neighbor, n_neighbor = multiple_verlet(nodes_3d, n_bound, rc)
 #%%
