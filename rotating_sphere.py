@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import threading
 from joblib import Parallel, delayed
 
-from generate_particle import generate_particles, generate_particles2, generate_particles_rectangle, generate_particles_singleres
+from generate_particle import generate_particles, generate_particles2, generate_particles3, generate_particles_rectangle, generate_particles_singleres
 from neighbor_search import neighbor_search_cell_list
 from neighbor_search_verlet import multiple_verlet
 from visualize import visualize
