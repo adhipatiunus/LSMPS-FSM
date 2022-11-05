@@ -45,21 +45,21 @@ def LSMPSb(node_x, node_y, index, diameter, r_e, neighbor, n_neighbor):
         
         neighbor_idx = np.array(neighbor[i])
         
-        Li = np.mean(diameter[neighbor_idx])
+        l = np.mean(diameter[neighbor_idx])
         
         #R_max = np.max(R[neighbor_idx])
         
         idx_i = i
         x_i = node_x[idx_i]
         y_i = node_y[idx_i]
-        R_i = r_e * Li
+        R_i = r_e * diameter[idx_i]
                 
         H_rs[0, 0] = 1
-        H_rs[1, 1] = Li**-1
-        H_rs[2, 2] = Li**-1
-        H_rs[3, 3] = 2 * Li**-2
-        H_rs[4, 4] = Li**-2
-        H_rs[5, 5] = 2 * Li**-2
+        H_rs[1, 1] = l**-1
+        H_rs[2, 2] = l**-1
+        H_rs[3, 3] = 2 * l**-2
+        H_rs[4, 4] = l**-2
+        H_rs[5, 5] = 2 * l**-2
                 
         for j in range(n_neighbor[i]):
             idx_j = neighbor_idx[j]
@@ -72,8 +72,8 @@ def LSMPSb(node_x, node_y, index, diameter, r_e, neighbor, n_neighbor):
             y_ij = y_j - y_i
             r_ij = np.sqrt((x_ij)**2 + (y_ij)**2)
              
-            p_x = x_ij / Li
-            p_y = y_ij / Li
+            p_x = x_ij / l
+            p_y = y_ij / l
             
             P[0, 0] = 1.0
             P[1, 0] = p_x
@@ -85,6 +85,7 @@ def LSMPSb(node_x, node_y, index, diameter, r_e, neighbor, n_neighbor):
             w_ij = calculate_weight(r_ij, R_ij)
             M += w_ij * np.dot(P, P.T)
             b_temp[j] = w_ij * P
+        #print(M)
         M_inv = np.linalg.inv(M)
         MinvHrs = np.dot(H_rs, M_inv)
         
@@ -122,7 +123,7 @@ def LSMPSbUpwind(node_x, node_y, index, diameter, r_e, neighbor, n_neighbor, fx,
         
         neighbor_idx = np.array(neighbor[i])
         
-        Li = np.mean(diameter[neighbor_idx])
+        l = np.mean(diameter[neighbor_idx])
         
         #R_max = np.max(R[neighbor_idx])
         
@@ -131,14 +132,14 @@ def LSMPSbUpwind(node_x, node_y, index, diameter, r_e, neighbor, n_neighbor, fx,
         idx_i = i
         x_i = node_x[idx_i]
         y_i = node_y[idx_i]
-        R_i = r_e * Li
+        R_i = r_e * diameter[idx_i]
                 
         H_rs[0, 0] = 1
-        H_rs[1, 1] = Li**-1
-        H_rs[2, 2] = Li**-1
-        H_rs[3, 3] = 2 * Li**-2
-        H_rs[4, 4] = Li**-2
-        H_rs[5, 5] = 2 * Li**-2
+        H_rs[1, 1] = l**-1
+        H_rs[2, 2] = l**-1
+        H_rs[3, 3] = 2 * l**-2
+        H_rs[4, 4] = l**-2
+        H_rs[5, 5] = 2 * l**-2
                 
         for j in range(n_neighbor[i]):
             idx_j = neighbor_idx[j]
@@ -150,8 +151,8 @@ def LSMPSbUpwind(node_x, node_y, index, diameter, r_e, neighbor, n_neighbor, fx,
             x_ij = x_j - x_i
             y_ij = y_j - y_i
              
-            p_x = x_ij / Li
-            p_y = y_ij / Li
+            p_x = x_ij / l
+            p_y = y_ij / l
             
             P[0, 0] = 1.0
             P[1, 0] = p_x
@@ -222,15 +223,30 @@ cell_size = r_e * np.max(diameter)
 # %%
 # Neighbor search
 n_bound = n_boundary[3]
-h = diameter 
-rc = np.concatenate((h[:n_bound] * r_e * 2, h[n_bound:] * r_e))
+h = max(diameter) 
+#rc = np.concatenate((h[:n_bound] * r_e * 2, h[n_bound:] * r_e))
+rc = r_e * h * np.ones_like(diameter)
 nodes_3d = np.concatenate((node_x.reshape(-1,1), node_y.reshape(-1,1), node_z.reshape(-1,1)), axis = 1)
 neighbor, n_neighbor = multiple_verlet(nodes_3d, n_bound, rc)
+#%%
+neighbor_clean = [[] for i in range(n_particle)]
+nneighbor_clean = []
+
+for i in range(n_particle):
+    nneigh = 0
+    idx_i = i
+    for j in range(n_neighbor[i]):
+        idx_j = neighbor[i][j]
+        R_ij = r_e * (diameter[idx_i] + diameter[idx_j]) / 2
+        if (node_x[idx_i] - node_x[idx_j])**2 + (node_y[idx_i] - node_y[idx_j])**2 <  R_ij**2:
+            neighbor_clean[idx_i].append(idx_j)
+            nneigh += 1
+    nneighbor_clean.append(nneigh)
 #%%
 n_thread = threading.active_count()
 index = np.array(index)
 i_list = np.array_split(index, n_thread)
-res = Parallel(n_jobs=-1)(delayed(LSMPSb)(node_x, node_y, idx, diameter, r_e, neighbor, n_neighbor) for idx in i_list)
+res = Parallel(n_jobs=-1)(delayed(LSMPSb)(node_x, node_y, idx, diameter, r_e, neighbor_clean, nneighbor_clean) for idx in i_list)
 
 EtaDx = [0] * n_thread
 EtaDy = [0] * n_thread
@@ -336,7 +352,7 @@ alphaC = 0.5
 #dt = 0.05
 Re = 100
 nu = u0 * width / Re
-eta = 1e-2
+eta = 5e-3
 T = 0
 omega = 0
 
@@ -371,7 +387,7 @@ ts = []
 L2u = []
 L2v = []
 #%%
-dt = 1e-2
+dt = 5e-3
 u_old = u
 v_old = v
 
@@ -380,7 +396,7 @@ while T < 5:
     n_thread = threading.active_count()
     index = np.array(index)
     i_list = np.array_split(index, n_thread)
-    res = Parallel(n_jobs=-1)(delayed(LSMPSbUpwind)(node_x, node_y, idx, diameter, r_e, neighbor, n_neighbor, u, v) for idx in i_list)
+    res = Parallel(n_jobs=-1)(delayed(LSMPSbUpwind)(node_x, node_y, idx, diameter, r_e, neighbor_clean, nneighbor_clean, u, v) for idx in i_list)
 
     EtaDxUpwind = [0] * n_thread
     EtaDyUpwind = [0] * n_thread
@@ -506,10 +522,10 @@ while T < 5:
     print('maximum u = ', max(u))
     print('maximum v = ', max(v))
     
-    visualize(node_x, node_y, p, diameter, 'P')
-    visualize(node_x, node_y, u, diameter, 'u')
-    visualize(node_x, node_y, v, diameter, 'v')
-    visualize(node_x, node_y, np.sqrt(u**2+v**2), diameter, 'v res')
+    #visualize(node_x, node_y, p, diameter, 'P')
+    #visualize(node_x, node_y, u, diameter, 'u')
+    #visualize(node_x, node_y, v, diameter, 'v')
+    #visualize(node_x, node_y, np.sqrt(u**2+v**2), diameter, 'v res')
     
     T += dt    
 
