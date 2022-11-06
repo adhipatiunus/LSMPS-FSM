@@ -547,7 +547,7 @@ def generate_particles2(xmin, xmax, x_center, ymin, ymax, y_center, sigma, R):
     h7 = 1/64
     h8 = 1/128
 
-    h = 0.05
+    h = 0.1
 
     lx = xmax - xmin
     ly = ymax - ymin
@@ -609,7 +609,7 @@ def generate_particles2(xmin, xmax, x_center, ymin, ymax, y_center, sigma, R):
     diameter = h * np.ones(n_bound)
     
     # rectangle
-    h = 0.025
+    h = 0.05
     x_bound_min = 3
     x_bound_max = 12
     y_bound_min = 5
@@ -639,7 +639,7 @@ def generate_particles2(xmin, xmax, x_center, ymin, ymax, y_center, sigma, R):
     node_y = np.concatenate((node_y, rec_y))
     diameter = np.concatenate((diameter, sp))
     
-    h = 0.05
+    h = 0.1
     nx = int(((xmax - h) - (xmin + h)) / h) + 1
     ny = int(((ymax - h) - (ymin + h)) / h) + 1
 
@@ -776,7 +776,7 @@ def generate_particles3(xmin, xmax, x_center, ymin, ymax, y_center, sigma, R):
     diameter = np.concatenate((diameter, sp))
     
     # Second layer
-    h = 0.05
+    h = 0.025
     nx = int((xmax - xmin) / h) + 1
     ny = int((ymax - ymin) / h) + 1
     
