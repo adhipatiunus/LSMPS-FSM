@@ -364,7 +364,7 @@ alphaC = 0.5
 #dt = 0.05
 Re = 100
 nu = u0 * width / Re
-eta = 5e-3
+eta = 5e-2
 T = 0
 omega = 0
 
@@ -399,11 +399,11 @@ ts = []
 L2u = []
 L2v = []
 #%%
-dt = 5e-3
+dt = 5e-2
 u_old = u
 v_old = v
 
-sft = 1e-2
+sft = dt / 10
 
 while T <= 5 + sft:
     #dt = np.min(alphaC * diameter / np.sqrt(u**2+v**2))
