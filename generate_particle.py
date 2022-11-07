@@ -106,7 +106,7 @@ def generate_particles(xmin, xmax, x_center, ymin, ymax, y_center, sigma, R):
     h7 = 1/64
     h8 = 1/128
 
-    h = 0.05
+    h = 0.1
 
     lx = xmax - xmin
     ly = ymax - ymin
@@ -169,7 +169,7 @@ def generate_particles(xmin, xmax, x_center, ymin, ymax, y_center, sigma, R):
     
     # Inner Sphere
     # First layer
-    h = 0.025
+    h = 0.1
     R_in = 0
     R_out = R - 2 * h
     sphere_x, sphere_y, sp = generate_node_spherical(x_center, y_center, R_in, R_out, h)
@@ -609,7 +609,7 @@ def generate_particles2(xmin, xmax, x_center, ymin, ymax, y_center, sigma, R):
     diameter = h * np.ones(n_bound)
     
     # rectangle
-    h = 0.05
+    h = 0.025
     x_bound_min = 3
     x_bound_max = 12
     y_bound_min = 5
